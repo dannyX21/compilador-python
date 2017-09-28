@@ -1,5 +1,5 @@
 from lexico import Lexico
-from simbolo import Simbolo
+from simbolo import Simbolo, tipoDato
 
 class Sintactico():
     def __init__(self, lexico):
@@ -68,6 +68,10 @@ class Sintactico():
     def TIPO(self):
         actual = self.get_token_actual()
         if actual == valor_token('int') or actual == valor_token('float') or actual == valor_token('bool') or actual == valor_token('char') or actual == valor_token('string') or actual == valor_token('void'):
+            tipos = list(tipoDato.keys())
+            for t in tipos:
+                if actual == valor_token(t):
+                    self.lexico.TIPODATO = tipoDato[t]
             self.compara(actual)
             return True
         else:
@@ -142,14 +146,20 @@ class Sintactico():
     def FUNCION(self):
         actual = self.get_token_actual()
         if actual == valor_token('function'):
+            if self.lexico.FIN_GLOBALES == -1:
+                self.lexico.FIN_GLOBALES = len(self.lexico.tabla_simbolos)
             self.compara(actual)
             if self.TIPO():
+                self.lexico.SECCION = 1 #definicion de variables locales.
+                self.lexico.INICIO_LOCALES = len(self.lexico.tabla_simbolos)
                 self.compara(valor_token('id'))
                 self.compara(val_ascii('('))
                 if self.PARAMETROS_FORMALES():
                     self.compara(val_ascii(')'))
                     if self.DEFINIR_VARIABLES():
+                        self.lexico.SECCION = 2 #cuerpo de funcion local
                         if self.CUERPO_FUNCION():
+                            self.lexico.SECCION = 0
                             return True
                         else:
                             return False
@@ -368,6 +378,9 @@ class Sintactico():
     def PRINCIPAL(self):
         actual = self.get_token_actual()
         if actual == valor_token('main'):
+            if self.lexico.FIN_GLOBALES == -1:
+                self.lexico.FIN_GLOBALES = len(self.lexico.tabla_simbolos)
+            self.lexico.SECCION = 3 #Cuerpo principal
             self.compara(actual)
             self.compara(val_ascii('('))
             if self.PARAMETROS_FORMALES():

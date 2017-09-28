@@ -1,4 +1,4 @@
-from simbolo import Simbolo
+from simbolo import Simbolo, tipoDato
 
 class Lexico():
     def __init__(self, codigo_fuente=''):
@@ -14,6 +14,11 @@ class Lexico():
         self.Lexema =""
         self.__num_linea = 1
         self.CARACTERES_VALIDOS = r"()[]{}+-*\/%|&!,;"
+        self.TIPODATO = tipoDato["na"]
+        self.SECCION = 0
+        self.FIN_PALABRAS_RESERVADAS = -1
+        self.FIN_GLOBALES = -1
+        self.INICIO_LOCALES = -1
 
         self.__cargar_palabras_reservadas()
         #self.mostrar_tabla_simbolos()
@@ -27,6 +32,7 @@ class Lexico():
     def __cargar_palabras_reservadas(self):         #Carga las palabras reservadas en la tabla de simbolos
         for p in self.palabras_reservadas:
             self.inserta_simbolo(Simbolo(p,Simbolo.TOKENS[p.upper()]))
+        self.FIN_PALABRAS_RESERVADAS = len(self.tabla_simbolos)
 
     def mostrar_tabla_simbolos(self):               #Muestra la tabla de simbolos
         for s in self.tabla_simbolos:
@@ -59,6 +65,43 @@ class Lexico():
     def buscar_lexema(self, lexema):
         simb = [s for s in self.tabla_simbolos if lexema == s.Lexema]
         return simb[0] if len(simb)>0 else None
+
+    def buscar_globales(self, lexema):  #Seccion 0
+        for i in range(0, len(self.tabla_simbolos)):
+            if self.tabla_simbolos[i].Lexema == lexema:
+                return self.tabla_simbolos[i]
+        return None
+
+    def buscar_locales(self, lexema):   #Seccion 1
+        for i in range(self.INICIO_LOCALES, len(self.tabla_simbolos)):
+            if self.tabla_simbolos[i].Lexema == lexema:
+                return self.tabla_simbolos[i]
+
+        for i in range(0, self.FIN_PALABRAS_RESERVADAS):
+            if self.tabla_simbolos[i].Lexema == lexema:
+                return self.tabla_simbolos[i]
+        return None
+
+    def buscar_funcion(self, lexema):   #Seccion 2
+        for i in range(self.INICIO_LOCALES, len(self.tabla_simbolos)):
+            if self.tabla_simbolos[i].Lexema == lexema:
+                return self.tabla_simbolos[i]
+
+        for i in range(0, self.FIN_GLOBALES):
+            if self.tabla_simbolos[i].Lexema == lexema:
+                return self.tabla_simbolos[i]
+        return None
+
+    def buscar_principal(self, lexema):     #Seccion 3
+        for i in range(0, self.FIN_GLOBALES):
+            if self.tabla_simbolos[i].Lexema == lexema:
+                return self.tabla_simbolos[i]
+        return None
+
+
+
+
+
 
 ##        for s in self.tabla_simbolos:
 ##            if lexema == s.Lexema:
@@ -131,11 +174,43 @@ class Lexico():
             elif self.__estado == 11:
                 self.regresa_caracter()
                 self.leer_lexema()
-                s = self.buscar_lexema(self.Lexema)
-                if not s:
-                    s = Simbolo(self.Lexema, Simbolo.TOKENS['ID'])
-                    self.inserta_simbolo(s)
-                return s
+                #s = self.buscar_lexema(self.Lexema)
+                if self.SECCION == 0:     #Definicion de variables Globales.
+                    s = self.buscar_globales(self.Lexema)
+                    if s:
+                        if s.Token != Simbolo.TOKENS['ID']:
+                            return s
+                        else:
+                            self.register_error("La variable: '{}' ya estaba declarada.".format(s.Lexema))
+                    else:
+                        s = Simbolo(self.Lexema, Simbolo.TOKENS['ID'], self.TIPODATO)
+                        self.inserta_simbolo(s)
+                    return s
+                elif self.SECCION == 1:     #Definicion de variables Locales.
+                    s = self.buscar_locales(self.Lexema)
+                    if s:
+                        if s.Token != Simbolo.TOKENS['ID']:
+                            return s
+                        else:
+                            self.register_error("La variable: '{}' ya estaba declarada en el ambito actual.".format(s.Lexema))
+                    else:
+                        s = Simbolo(self.Lexema, Simbolo.TOKENS['ID'], self.TIPODATO)
+                        self.inserta_simbolo(s)
+                    return s
+                elif self.SECCION == 2:     #Cuerpo de funcion.
+                    s = self.buscar_funcion(self.Lexema)
+                    if not s:
+                        self.register_error("La variable '{}' no esta definida.".format(self.Lexema))
+                        s = Simbolo(self.Lexema, Simbolo.TOKENS['ID'], tipoDato["na"])
+                        self.inserta_simbolo(s)
+                    return s
+                elif self.SECCION == 3:     #Cuerpo principal.
+                    s = self.buscar_principal(self.Lexema)
+                    if not s:
+                        self.register_error("La variable '{}' no esta definida".format(self.Lexema))
+                        s = Simbolo(self.Lexema, Simbolo.TOKENS['ID'], tipoDato["na"])
+                        self.inserta_simbolo(s)
+                    return s
             elif self.__estado == 12:
                 if c.isnumeric():
                     self.__estado = 13
@@ -192,7 +267,9 @@ class Lexico():
             elif self.__estado == 20:
                 self.regresa_caracter()
                 self.leer_lexema()
-                return Simbolo(self.Lexema, Simbolo.TOKENS['NUM'])
+                simb = Simbolo(self.Lexema, Simbolo.TOKENS['NUM'],tipoDato['int'])
+                self.inserta_simbolo(simb)
+                return simb
             elif self.__estado == 21:
                 self.regresa_caracter()
                 self.leer_lexema()
@@ -317,3 +394,6 @@ class Lexico():
 
     def Num_linea(self):
         return self.__num_linea
+
+    def register_error(self,message):
+        print("Ln: {}, {}".format(self.Num_linea(),message))

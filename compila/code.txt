@@ -1,12 +1,17 @@
-int a,b,c;
-bool x,y;
-
+int a, b;
+bool b;
+function int suma (bool a)
+bool x;
+{
+a = true;
+write(b);
+}
+function float area (float a)
+{
+  x = a;
+}
 main()
 {
-  a = 1;
-  b = a + 2;
-  if (a>b) then
-  {
-    write(b)
-  }
+write(b);
+write(x);
 }

@@ -1,3 +1,4 @@
+#!/usr/bin/python3.5
 from lexico import Lexico
 from sintactico import Sintactico
 from simbolo import Simbolo
@@ -16,6 +17,9 @@ if sin.errors > 0:
 else:
     print("Compilacion exitosa!")
 
+for s in lex.tabla_simbolos:
+    print(s)
+    
 ##while True:
 ##    s = lex.siguiente_componente_lexico()
 ##    print(s)

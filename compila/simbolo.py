@@ -1,11 +1,24 @@
+tipoDato = {
+"int": 0,
+"bool": 1,
+"float":2,
+"char":3,
+"string":4,
+"void": 5,
+"na": 6
+}
+
+tipoDatoText = { value: key for key, value in tipoDato.items()}
+
 class Simbolo:
-    def __init__(self, lexema, token):
+    def __init__(self, lexema, token, tipoDato=tipoDato["na"]):
         self.Lexema = lexema
         self.Token = token
+        self.TipoDato = tipoDato
 
     def __repr__(self):
-        return "Lexema: '{}', Token: {}".format(self.Lexema, self.Token)
-        
+        return "Lexema: '{}', Token: {}, TipoDato: {}".format(self.Lexema, self.Token, tipoDatoText[self.TipoDato])
+
     TOKENS = {
         'BOOL' : 256,
         'CALL' : 257,
@@ -40,4 +53,3 @@ class Simbolo:
         'FALSE' : 286,
         'TRUE' : 287
         }
-    
