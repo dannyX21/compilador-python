@@ -1,17 +1,6 @@
 int a, b;
-bool b;
-function int suma (bool a)
-bool x;
-{
-a = true;
-write(b);
-}
-function float area (float a)
-{
-  x = a;
-}
-main()
-{
-write(b);
-write(x);
+main() {
+b= 1 + 2 - 3 + 4;
+a = b + 1;
+a = a +b -1;
 }

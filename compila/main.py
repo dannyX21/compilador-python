@@ -17,9 +17,11 @@ if sin.errors > 0:
 else:
     print("Compilacion exitosa!")
 
-for s in lex.tabla_simbolos:
-    print(s)
-    
+print(sin.TAC())
+
+#for s in lex.tabla_simbolos:
+#    print(s)
+
 ##while True:
 ##    s = lex.siguiente_componente_lexico()
 ##    print(s)

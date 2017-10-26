@@ -1,17 +1,22 @@
 from lexico import Lexico
 from simbolo import Simbolo, tipoDato
+from semantico import Semantico
+from pila import Pila
+
 
 class Sintactico():
     def __init__(self, lexico):
         self.lexico = lexico
         self.complex_actual = self.lexico.siguiente_componente_lexico()
         self.errors = 0
-        #print(self.complex_actual)
+        self.sem = Semantico()
+        self.pila = Pila()
+#       print(self.complex_actual)
 
     def siguiente_componente_lexico(self):
         self.complex_actual = self.lexico.siguiente_componente_lexico()
 
-    def compara(self,token_esperado):
+    def compara(self, token_esperado):
         if self.complex_actual and token_esperado == self.complex_actual.Token:
             self.siguiente_componente_lexico()
             return True
@@ -249,9 +254,13 @@ class Sintactico():
             return False
 
     def ASIGNACION(self):
+        tac = ""
         if self.DESTINO():
+            tac = self.pila.pop() + " := "
             self.compara(valor_token('igu'))
             if self.FUENTE():
+                tac += self.pila.pop() + "\n"
+                self.sem.genTAC(tac)
                 self.compara(val_ascii(';'))
                 return True
             else:
@@ -503,10 +512,18 @@ class Sintactico():
             return False
 
     def EXPRESION_ARITMETICA_aux(self):
+        tmp = ""
+        tac = ""
         actual = self.get_token_actual()
         if actual == val_ascii('+') or actual == val_ascii('-'):
+            operador = self.complex_actual.Lexema
             self.compara(actual)
+            tmp = self.sem.genTemp()
+            tac = tmp + " := " + self.pila.pop() + " " + operador + " "
             if self.TERMINO_ARITMETICO():
+                tac += self.pila.pop() + "\n"
+                self.sem.genTAC(tac)
+                self.pila.push(tmp)
                 if self.EXPRESION_ARITMETICA_aux():
                     return True
                 else:
@@ -556,6 +573,7 @@ class Sintactico():
     def OPERANDO(self):
         actual = self.get_token_actual()
         if actual == valor_token('num') or actual == valor_token('numf') or actual == valor_token('const_string') or actual == valor_token('const_char') or actual == valor_token('true') or actual == valor_token('false'):
+            self.pila.push(self.complex_actual.Lexema)
             self.compara(actual)
             return True
         elif actual == val_ascii('('):
@@ -586,7 +604,7 @@ class Sintactico():
         else:
             return False
 
-    def ACTUALES (self):
+    def ACTUALES(self):
         if self.ACTUAL():
             if self.ACTUALES_aux():
                 return True
@@ -615,10 +633,10 @@ class Sintactico():
         else:
             return False
 
-
     def DESTINO(self):
         actual = self.get_token_actual()
         if actual == valor_token('id'):
+            self.pila.push(self.complex_actual.Lexema)
             self.compara(actual)
             if self.ELEMENTO_ARREGLO():
                 return True
@@ -646,12 +664,15 @@ class Sintactico():
         else:
             return None
 
-    def register_error(self,item):
+    def register_error(self, item):
         self.errors += 1
         if type(item) == str:
             print("Ln: {}, se esperaba un(a): '{}'".format(self.lexico.Num_linea(),item))
         elif type(item) == int:
             print("Ln: {}, se esperaba token# {}".format(self.lexico.Num_linea(),item))
+
+    def TAC(self):
+        return self.sem.code
 
 
 def valor_token(lexema):
@@ -660,6 +681,7 @@ def valor_token(lexema):
         return token
     else:
         return None
+
 
 def val_ascii(caracter):
     return ord(caracter)
