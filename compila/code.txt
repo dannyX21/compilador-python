@@ -1,6 +1,9 @@
 int a, b;
-main() {
-b= 1 + 2 - 3 + 4;
-a = b + 1;
-a = a +b -1;
+char c;
+bool d;
+main()
+{
+  a = 1;
+  d = a < 0;
+  b = a + d;
 }
